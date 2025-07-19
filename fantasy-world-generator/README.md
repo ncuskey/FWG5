@@ -41,7 +41,10 @@ npm install
 
 3. Start the development server:
 ```bash
-npm start
+# If you are in the project root, first run:
+# cd fantasy-world-generator
+# then:
+# npm start
 ```
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
