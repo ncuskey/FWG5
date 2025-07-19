@@ -3,6 +3,50 @@ import * as d3 from 'd3';
 import { voronoi } from 'd3-voronoi';
 import './WorldGenerator.css';
 
+// ---------- New generateHeightmap function ----------
+export function generateHeightmap(polygons, { mainPeak, radius, sharpness, blobCount }) {
+  // Reset heights and temp flags
+  polygons.forEach(p => { p.height = 0; p._used = false; });
+
+  // Plant blobs one by one
+  for (let b = 0; b < blobCount; b++) {
+    const startIndex = Math.floor(Math.random() * polygons.length);
+    // First blob uses mainPeak; subsequent blobs decay by radius^b
+    const initialH = b === 0 ? mainPeak : mainPeak * Math.pow(radius, b);
+
+    // Initialize BFS queue
+    const queue = [{ idx: startIndex, h: initialH }];
+    polygons[startIndex].height = initialH;
+    polygons[startIndex]._used = true;
+
+    while (queue.length) {
+      const { idx, h } = queue.shift();
+      if (h < 0.01) continue;
+
+      // Spread to neighbors
+      polygons[idx].neighbors.forEach(ni => {
+        const cell = polygons[ni];
+        if (cell._used) return;
+
+        // Apply randomness factor
+        const mod = sharpness === 0
+          ? 1
+          : 1 + (Math.random() * 2 - 1) * sharpness;
+
+        const nextH = h * radius * mod;
+        if (nextH < 0.01) return;
+
+        cell.height = Math.min(1, cell.height + nextH);
+        cell._used = true;
+        queue.push({ idx: ni, h: nextH });
+      });
+    }
+
+    // Clear flags for the next blob
+    polygons.forEach(p => p._used = false);
+  }
+}
+
 const WorldGenerator = () => {
   const svgRef = useRef();
   const [debugInfo, setDebugInfo] = useState({ cell: 0, height: 0, feature: 'no' });
@@ -13,8 +57,7 @@ const WorldGenerator = () => {
     blobSharpness: 0.2,
     blur: 0,
     showGrid: false,
-    drawSeaPolygons: false,
-    showBlobCenters: false
+    drawSeaPolygons: false
   });
 
   // Poisson-disc sampling algorithm
@@ -85,41 +128,7 @@ const WorldGenerator = () => {
     }
   };
 
-  // Generate height map using blob algorithm
-  const addHeight = (polygons, start, height, type, radius, sharpness) => {
-    const queue = [];
-    const used = [];
-    
-    polygons[start].height += height;
-    polygons[start].featureType = undefined;
-    queue.push(start);
-    used.push(start);
-    
-    for (let i = 0; i < queue.length && height > 0.01; i++) {
-      if (type === "island") {
-        height = polygons[queue[i]].height * radius;
-      } else {
-        height = height * radius;
-      }
-      
-      const currentHeight = height;
-      polygons[queue[i]].neighbors.forEach((e) => {
-        if (used.indexOf(e) < 0) {
-          let mod = Math.random() * sharpness + 1.1 - sharpness;
-          if (sharpness === 0) {
-            mod = 1;
-          }
-          polygons[e].height += currentHeight * mod;
-          if (polygons[e].height > 1) {
-            polygons[e].height = 1;
-          }
-          polygons[e].featureType = undefined;
-          queue.push(e);
-          used.push(e);
-        }
-      });
-    }
-  };
+
 
   // Detect neighbors for each polygon
   const detectNeighbors = (polygons, diagram) => {
@@ -271,7 +280,6 @@ const WorldGenerator = () => {
     const islandBack = viewbox.append("g").attr("class", "islandBack");
     const mapCells = viewbox.append("g").attr("class", "mapCells");
     const oceanLayer = viewbox.append("g").attr("class", "oceanLayer");
-    const circles = viewbox.append("g").attr("class", "circles");
     const coastline = viewbox.append("g").attr("class", "coastline");
     const shallow = viewbox.append("g").attr("class", "shallow");
     const lakecoast = viewbox.append("g").attr("class", "lakecoast");
@@ -330,62 +338,22 @@ const WorldGenerator = () => {
     
     // Add some initial height for visualization
     if (count === 0) {
-      // Add a small amount of height to a few random cells for initial visualization
-      for (let i = 0; i < 10; i++) {
-        const rnd = Math.floor(Math.random() * polygons.length);
-        addHeight(polygons, rnd, 0.5, "hill", 0.9, 0.2);
-      }
-      
-      // Add a visible marker to show where height was added
-      circles.append("circle")
-        .attr("r", 5)
-        .attr("cx", mapWidth / 2)
-        .attr("cy", mapHeight / 2)
-        .attr("fill", "red")
-        .attr("class", "circle");
+      generateHeightmap(polygons, {
+        mainPeak: 0.5,
+        radius: 0.9,
+        sharpness: 0.2,
+        blobCount: 5
+      });
     }
     
     // Generate random map if count is provided
     if (count > 0) {
-      for (let c = 0; c < count; c++) {
-        if (c === 0) {
-          // Big blob first
-          const x = Math.random() * mapWidth / 4 + mapWidth / 2;
-          const y = Math.random() * mapHeight / 4 + mapHeight / 2;
-          const rnd = diagram.find(x, y).index;
-          
-          circles.append("circle")
-            .attr("r", 3)
-            .attr("cx", x)
-            .attr("cy", y)
-            .attr("fill", color(1 - settings.maxHeight))
-            .attr("class", "circle");
-          
-          addHeight(polygons, rnd, settings.maxHeight, "island", 0.99, settings.blobSharpness);
-        } else {
-          // Small blobs
-          let limit = 0;
-          let rnd;
-          do {
-            rnd = Math.floor(Math.random() * polygons.length);
-            limit++;
-          } while ((polygons[rnd].height > 0.25 || 
-                   samples[rnd][0] < mapWidth * 0.25 || 
-                   samples[rnd][0] > mapWidth * 0.75 || 
-                   samples[rnd][1] < mapHeight * 0.2 || 
-                   samples[rnd][1] > mapHeight * 0.75) && limit < 50);
-          
-          const height = Math.random() * 0.4 + 0.1;
-          circles.append("circle")
-            .attr("r", 3)
-            .attr("cx", samples[rnd][0])
-            .attr("cy", samples[rnd][1])
-            .attr("fill", color(1 - height))
-            .attr("class", "circle");
-          
-          addHeight(polygons, rnd, height, "hill", settings.blobRadius, settings.blobSharpness);
-        }
-      }
+      generateHeightmap(polygons, {
+        mainPeak: settings.maxHeight,
+        radius: settings.blobRadius,
+        sharpness: settings.blobSharpness,
+        blobCount: count
+      });
     }
     
     // Mark features and draw
@@ -398,10 +366,7 @@ const WorldGenerator = () => {
     drawPolygons(polygons, mapCells, color);
     drawCoastline(polygons, diagram, mapWidth, mapHeight, coastline, lakecoast, shallow, islandBack);
     
-    // Hide circles by default unless showBlobCenters is true
-    if (!settings.showBlobCenters) {
-      circles.style("display", "none");
-    }
+
     
     // Add ocean background (should be behind everything)
     oceanLayer.append("rect")
@@ -449,19 +414,13 @@ const WorldGenerator = () => {
       const point = d3.pointer(event);
       const nearest = diagram.find(point[0], point[1]).index;
       
-      circles.append("circle")
-        .attr("r", 3)
-        .attr("cx", point[0])
-        .attr("cy", point[1])
-        .attr("fill", color(1 - settings.maxHeight))
-        .attr("class", "circle");
-      
-      if (d3.selectAll(".circle").size() === 1) {
-        addHeight(polygons, nearest, settings.maxHeight, "island", 0.99, settings.blobSharpness);
-      } else {
-        const height = Math.random() * 0.4 + 0.1;
-        addHeight(polygons, nearest, height, "hill", settings.blobRadius, settings.blobSharpness);
-      }
+      // Add a small blob at the clicked location
+      generateHeightmap(polygons, {
+        mainPeak: settings.maxHeight,
+        radius: settings.blobRadius,
+        sharpness: settings.blobSharpness,
+        blobCount: 1
+      });
       
       markFeatures(polygons, diagram);
       drawPolygons(polygons, mapCells, color);
@@ -679,16 +638,8 @@ const WorldGenerator = () => {
       [setting]: value
     }));
     
-    // Handle special cases
-    if (setting === 'showBlobCenters') {
-      const circles = d3.select(svgRef.current).selectAll('.circle');
-      if (value) {
-        circles.style("display", "block");
-      } else {
-        circles.style("display", "none");
-      }
-    } else if (['pointsRadius', 'maxHeight', 'blobRadius', 'blobSharpness'].includes(setting)) {
-      // Regenerate world when key parameters change
+    // Regenerate world when key parameters change
+    if (['pointsRadius', 'maxHeight', 'blobRadius', 'blobSharpness'].includes(setting)) {
       generateWorld();
     }
   };
@@ -766,14 +717,7 @@ const WorldGenerator = () => {
               />
               Draw Sea Polygons
             </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.showBlobCenters}
-                onChange={(e) => handleSettingChange('showBlobCenters', e.target.checked)}
-              />
-              Show Blob Centers
-            </label>
+
             <label>
               Blur:
               <input
