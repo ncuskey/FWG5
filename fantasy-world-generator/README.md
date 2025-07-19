@@ -50,8 +50,8 @@ npm start
 
 ### Basic Controls
 
-- **New Map**: Generates a fresh, empty world
-- **Random Map**: Creates a procedurally generated world with multiple land masses
+- **New Map**: Generates a new world with the current Blob Count (see settings)
+- **Random Map**: Creates a world with a higher Blob Count (11 blobs)
 - **Reset Zoom**: Returns the view to the original position and scale
 
 ### Interactive Features
@@ -69,6 +69,7 @@ npm start
 - **Max Height**: Maximum elevation for the primary land mass (0.1-1.0)
 - **Blob Radius**: How quickly height spreads and decays (0.5-0.999)
 - **Blob Sharpness**: Controls terrain randomness (0 = smooth, higher = jagged)
+- **Blob Count**: Number of blobs/islands to generate (1-20, adjustable slider)
 
 #### Visual Parameters:
 - **Blur**: Adds a blurred outline effect to land masses (0-2px)
@@ -180,6 +181,7 @@ This project has been actively developed with several major improvements:
 - **⚡ Performance Optimization**: Improved memory usage and rendering speed
 - **🧹 Code Cleanup**: Removed legacy circle markers and unused features
 - **📚 Better Documentation**: Comprehensive algorithm documentation and usage guides
+- **🖱️ Improved UX**: New Map always plants blobs; Blob Count is user-adjustable with a slider; no more blank ocean on new maps
 
 ### Key Algorithm Improvements:
 - **Efficient BFS Queue**: Proper height propagation with breadth-first search
