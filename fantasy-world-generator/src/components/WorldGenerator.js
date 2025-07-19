@@ -172,11 +172,22 @@ const WorldGenerator = () => {
 
   // Bounded Poisson-disc sampler
   function boundedSampler(w, h, r, margin) {
+    if (margin * 2 >= w || margin * 2 >= h) {
+      console.warn('Margin too large for map size/settings: no valid area for blob centers.');
+      return () => null;
+    }
     const sampler = poissonDiscSampler(w, h, r);
     return () => {
       let p;
+      let attempts = 0;
+      const maxAttempts = 1000;
       do {
         p = sampler();
+        attempts++;
+        if (attempts > maxAttempts) {
+          console.warn('Could not find a valid sample after', maxAttempts, 'attempts.');
+          return null;
+        }
       } while (
         !p ||
         p[0] < margin || p[0] > w - margin ||
@@ -390,7 +401,7 @@ const WorldGenerator = () => {
     const sampler = boundedSampler(mapWidth, mapHeight, settings.pointsRadius, margin);
     const samples = [];
     let sample;
-    while (sample = sampler()) samples.push(sample);
+    while ((sample = sampler())) samples.push(sample);
     
     // Voronoi diagram
     const voronoiGenerator = voronoi().extent([[0, 0], [mapWidth, mapHeight]]);
