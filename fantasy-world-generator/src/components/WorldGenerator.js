@@ -32,16 +32,60 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
     p._used = false;
   });
 
-  // 2. Blob seeding: just pick random indices (all are now safe due to margin)
+  // 2. Compute clearanceDistance so height at the edge < seaLevel
+  const clearanceDistance = Math.ceil(
+    Math.log(seaLevel / mainPeak) / Math.log(radius)
+  );
+
+  // 3. Identify border cells (edges with no left/right neighbor)
+  const border = new Set();
+  diagram.edges.forEach(e => {
+    if (!e.left || !e.right) {
+      if (e.left ) border.add(e.left.index);
+      if (e.right) border.add(e.right.index);
+    }
+  });
+
+  // 4. BFS to compute distance from border for each cell
+  const dist = Array(polygons.length).fill(Infinity);
+  const queue = [];
+  border.forEach(i => { dist[i] = 0; queue.push(i); });
+  while (queue.length) {
+    const i = queue.shift();
+    polygons[i].neighbors.forEach(n => {
+      if (dist[n] > dist[i] + 1) {
+        dist[n] = dist[i] + 1;
+        queue.push(n);
+      }
+    });
+  }
+
+  // 5. Only cells > clearanceDistance are safe seeds, and filter by pixel margin
+  const pixelMargin = clearanceDistance * window.settings?.pointsRadius || 4; // fallback if not in window
+  const mapWidth = window.mapWidth || 960;
+  const mapHeight = window.mapHeight || 540;
+  const safeSeeds = dist
+    .map((d,i) => d > clearanceDistance ? i : null)
+    .filter(i => i !== null)
+    .filter(i => {
+      const [x, y] = diagram.cells[i].site;
+      return (
+        x >= pixelMargin &&
+        x <= mapWidth  - pixelMargin &&
+        y >= pixelMargin &&
+        y <= mapHeight - pixelMargin
+      );
+    });
+
   let lastSeeds = [];
   for (let b = 0; b < blobCount; b++) {
     let startIndex;
     if (b === 0) {
-      startIndex = Math.floor(Math.random() * polygons.length);
+      startIndex = safeSeeds.random();
     } else {
       const parent = lastSeeds.random();
-      const nbrs = polygons[parent].neighbors;
-      startIndex = nbrs.length ? nbrs.random() : Math.floor(Math.random() * polygons.length);
+      const nbrs = polygons[parent].neighbors.filter(n => safeSeeds.includes(n));
+      startIndex = nbrs.length ? nbrs.random() : safeSeeds.random();
     }
     lastSeeds.push(startIndex);
 
@@ -54,10 +98,10 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
     polygons[startIndex].height = initialH;
     polygons[startIndex]._used = true;
 
-    // Spread until tiny
+    // Spread until below seaLevel
     while (queue.length) {
       const { idx, h } = queue.shift();
-      if (h < 0.01) continue;
+      if (h < seaLevel) continue;
 
       // Spread to neighbors
       polygons[idx].neighbors.forEach(ni => {
@@ -70,7 +114,7 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
           : 1 + (Math.random() * 2 - 1) * sharpness;
 
         const nextH = h * radius * mod;
-        if (nextH < 0.01) return;
+        if (nextH < seaLevel) return;
 
         // accumulate and cap at 1
         cell.height = Math.min(1, cell.height + nextH);
@@ -560,7 +604,7 @@ const WorldGenerator = () => {
     mapCells.selectAll(".mapStroke").remove();
     mapCells.selectAll(".blur").remove();
     
-    const limit = settings.drawSeaPolygons ? 0 : 0.1;
+    const limit = settings.drawSeaPolygons ? 0 : settings.seaLevel;
     
     polygons.forEach((polygon, index) => {
       if (polygon && polygon.length > 0 && polygon.height >= limit) {
