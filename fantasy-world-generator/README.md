@@ -1,12 +1,8 @@
-# FWG5 - Fantasy World Generator 0.5
+# Fantasy World Generator
 
 A React-based procedural fantasy world generation tool that creates height maps and coastlines using advanced algorithms.
 
-## 🎮 Live Demo
-
-The application is currently running at: [http://localhost:3000](http://localhost:3000)
-
-## ✨ Features
+## Features
 
 - **Procedural Generation**: Uses Poisson-disc sampling and Voronoi diagrams to create natural-looking terrain
 - **Interactive Map Creation**: Click to add land masses, islands, and hills
@@ -16,14 +12,14 @@ The application is currently running at: [http://localhost:3000](http://localhos
 - **Zoom and Pan**: Interactive navigation with D3.js zoom functionality
 - **Customizable Parameters**: Adjust various generation settings in real-time
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 - **React 19**: Modern React with hooks
-- **D3.js v7**: Data visualization and SVG manipulation
+- **D3.js**: Data visualization and SVG manipulation
 - **d3-voronoi**: Voronoi diagram generation
 - **CSS Grid**: Modern layout system
 
-## 🚀 Quick Start
+## Getting Started
 
 ### Prerequisites
 
@@ -34,8 +30,8 @@ The application is currently running at: [http://localhost:3000](http://localhos
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/ncuskey/FWG5.git
-cd FWG5/fantasy-world-generator
+git clone <repository-url>
+cd fantasy-world-generator
 ```
 
 2. Install dependencies:
@@ -50,7 +46,7 @@ npm start
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## 🎯 How to Use
+## How to Use
 
 ### Basic Controls
 
@@ -75,9 +71,8 @@ npm start
 - **Blur**: Adds a blurred outline effect to land masses (0-2px)
 - **Show Grid**: Toggles the display of cell boundaries
 - **Draw Sea Polygons**: Shows all polygons including ocean areas
-- **Show Blob Centers**: Displays the center points of generated land masses
 
-## 🧠 Algorithm Details
+## Algorithm Details
 
 ### Poisson-Disc Sampling
 Creates a uniform distribution of points across the map area, ensuring no two points are too close together. This creates natural-looking, organic terrain patterns.
@@ -97,27 +92,19 @@ Automatically identifies:
 ### Coastline Generation
 Detects edges between land and water cells, then connects them into continuous coastline paths using curve interpolation.
 
-## 📁 Project Structure
+## File Structure
 
 ```
-FWG5/
-├── fantasy-world-generator/          # React application
-│   ├── src/
-│   │   ├── index.js                  # App entry point
-│   │   ├── App.js                    # Main app component
-│   │   ├── App.css                   # App styles
-│   │   ├── index.css                 # Global styles
-│   │   └── components/
-│   │       ├── WorldGenerator.js     # Core world generation
-│   │       └── WorldGenerator.css    # Component styles
-│   ├── public/
-│   │   └── index.html                # HTML template
-│   ├── package.json                  # Dependencies
-│   └── README.md                     # Detailed documentation
-└── README.md                         # This file
+src/
+├── components/
+│   ├── WorldGenerator.js    # Main world generation component
+│   └── WorldGenerator.css   # Component-specific styles
+├── App.js                   # Main application component
+├── App.css                  # Application styles
+└── index.js                 # Application entry point
 ```
 
-## 🎨 Customization
+## Customization
 
 The application is highly customizable through the settings panel. You can:
 
@@ -127,14 +114,14 @@ The application is highly customizable through the settings panel. You can:
 - Add new feature types
 - Implement additional algorithms
 
-## 🌐 Browser Compatibility
+## Browser Compatibility
 
 - Chrome (recommended)
 - Firefox
 - Safari
 - Edge
 
-## ⚡ Performance
+## Performance
 
 The application is optimized for:
 - Smooth 60fps interaction
@@ -142,7 +129,7 @@ The application is optimized for:
 - Efficient memory usage
 - Responsive UI
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -150,25 +137,12 @@ The application is optimized for:
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is open source and available under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- Original algorithm inspiration from [JSFiddle by byzeyLaa](https://jsfiddle.net/byzeyLaa/)
+- Original algorithm inspiration from JSFiddle by byzeyLaa
 - D3.js community for excellent documentation and examples
 - React team for the amazing framework
-
-## 📈 Version History
-
-- **v0.5**: Initial release with core world generation features
-  - Procedural terrain generation
-  - Interactive height map creation
-  - Coastline detection and rendering
-  - Real-time parameter adjustment
-  - Zoom and pan functionality
-
----
-
-**Fantasy World Generator 0.5** - Create your own procedural fantasy worlds!
