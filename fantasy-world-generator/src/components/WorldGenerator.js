@@ -4,21 +4,84 @@ import { voronoi } from 'd3-voronoi';
 import './WorldGenerator.css';
 
 // ---------- New generateHeightmap function ----------
-export function generateHeightmap(polygons, { mainPeak, radius, sharpness, blobCount }) {
-  // Reset heights and temp flags
-  polygons.forEach(p => { p.height = 0; p._used = false; });
+/**
+ * Spread height values in “blobs” using a BFS queue.
+ * @param {Array<Cell>} polygons – array of cells, each with a .neighbors array.
+ * @param {object} options
+ * @param {number} options.mainPeak    – starting height for blob #0 (0–1)
+ * @param {number} options.radius      – fall‑off factor per ring (e.g. 0.8)
+ * @param {number} options.sharpness   – randomness (0 = smooth; >0 adds ±modulation)
+ * @param {number} options.blobCount   – how many blobs to plant
+ * @param {number} options.seaLevel    – sea level threshold
+ * @param {object} diagram             – voronoi diagram
+ */
+export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpness, blobCount, seaLevel }) {
+  // 1. Reset heights and flags
+  polygons.forEach(p => {
+    p.height = 0;
+    p._used = false;
+  });
 
-  // Plant blobs one by one
+  // 2. Compute clearanceDistance so height at the edge < seaLevel
+  const clearanceDistance = Math.ceil(
+    Math.log(seaLevel / mainPeak) / Math.log(radius)
+  );
+
+  // 3. Identify border cells (edges with no left/right neighbor)
+  const border = new Set();
+  diagram.edges.forEach(e => {
+    if (!e.left || !e.right) {
+      if (e.left ) border.add(e.left.index);
+      if (e.right) border.add(e.right.index);
+    }
+  });
+
+  // 4. BFS to compute distance from border for each cell
+  const dist = Array(polygons.length).fill(Infinity);
+  const q = [];
+  border.forEach(i => { dist[i] = 0; q.push(i); });
+  while (q.length) {
+    const i = q.shift();
+    polygons[i].neighbors.forEach(n => {
+      if (dist[n] > dist[i] + 1) {
+        dist[n] = dist[i] + 1;
+        q.push(n);
+      }
+    });
+  }
+
+  // 5. Only cells > clearanceDistance are safe seeds
+  const safeSeeds = dist
+    .map((d,i) => d > clearanceDistance ? i : null)
+    .filter(i => i !== null);
+
+  // 6. Cluster blob seeds and pick from safeSeeds
+  let lastSeeds = [];
   for (let b = 0; b < blobCount; b++) {
-    const startIndex = Math.floor(Math.random() * polygons.length);
-    // First blob uses mainPeak; subsequent blobs decay by radius^b
-    const initialH = b === 0 ? mainPeak : mainPeak * Math.pow(radius, b);
+    let startIndex;
+    if (b === 0 || !lastSeeds.length) {
+      // first blob: anywhere in safeSeeds
+      startIndex = safeSeeds[Math.floor(Math.random() * safeSeeds.length)];
+    } else {
+      // cluster along last seed’s neighbors (fallback to safeSeeds)
+      const parent = lastSeeds[Math.floor(Math.random() * lastSeeds.length)];
+      const neighbors = polygons[parent].neighbors.filter(n => safeSeeds.includes(n));
+      startIndex = neighbors.length
+        ? neighbors[Math.floor(Math.random() * neighbors.length)]
+        : safeSeeds[Math.floor(Math.random() * safeSeeds.length)];
+    }
+    lastSeeds.push(startIndex);
+
+    const initialH = b === 0
+      ? mainPeak
+      : mainPeak * Math.pow(radius, b);
 
     // Initialize BFS queue
     const queue = [{ idx: startIndex, h: initialH }];
     polygons[startIndex].height = initialH;
     polygons[startIndex]._used = true;
 
+    // Spread until tiny
     while (queue.length) {
       const { idx, h } = queue.shift();
       if (h < 0.01) continue;
@@ -28,7 +91,7 @@ export function generateHeightmap(polygons, { mainPeak, radius, sharpness, blobC
         const cell = polygons[ni];
         if (cell._used) return;
 
-        // Apply randomness factor
+        // random modulation around 1 ± sharpness
         const mod = sharpness === 0
           ? 1
           : 1 + (Math.random() * 2 - 1) * sharpness;
@@ -36,14 +99,15 @@ export function generateHeightmap(polygons, { mainPeak, radius, sharpness, blobC
         const nextH = h * radius * mod;
         if (nextH < 0.01) return;
 
+        // accumulate and cap at 1
         cell.height = Math.min(1, cell.height + nextH);
         cell._used = true;
         queue.push({ idx: ni, h: nextH });
       });
     }
 
-    // Clear flags for the next blob
-    polygons.forEach(p => p._used = false);
+    // 7. Reset flags for next blob
+    polygons.forEach(p => { p._used = false; });
   }
 }
 
@@ -55,6 +119,7 @@ const WorldGenerator = () => {
     maxHeight: 0.9,
     blobRadius: 0.9,
     blobSharpness: 0.2,
+    seaLevel: 0.2,
     blur: 0,
     showGrid: false,
     drawSeaPolygons: false,
@@ -344,21 +409,23 @@ const WorldGenerator = () => {
     
     // Add some initial height for visualization
     if (count === 0) {
-      generateHeightmap(polygons, {
+      generateHeightmap(polygons, diagram, {
         mainPeak: 0.5,
         radius: 0.9,
         sharpness: 0.2,
-        blobCount: 5
+        blobCount: 5,
+        seaLevel: settings.seaLevel
       });
     }
     
     // Generate random map if count is provided
     if (count > 0) {
-      generateHeightmap(polygons, {
+      generateHeightmap(polygons, diagram, {
         mainPeak: settings.maxHeight,
         radius: settings.blobRadius,
         sharpness: settings.blobSharpness,
-        blobCount: count
+        blobCount: count,
+        seaLevel: settings.seaLevel
       });
     }
     
@@ -414,11 +481,12 @@ const WorldGenerator = () => {
       const nearest = diagram.find(point[0], point[1]).index;
       
       // Add a small blob at the clicked location
-      generateHeightmap(polygons, {
+      generateHeightmap(polygons, diagram, {
         mainPeak: settings.maxHeight,
         radius: settings.blobRadius,
         sharpness: settings.blobSharpness,
-        blobCount: 1
+        blobCount: 1,
+        seaLevel: settings.seaLevel
       });
       
       markFeatures(polygons, diagram);
