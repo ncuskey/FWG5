@@ -3,6 +3,16 @@ import * as d3 from 'd3';
 import { voronoi } from 'd3-voronoi';
 import './WorldGenerator.css';
 
+// Add Array.prototype.random helper
+if (!Array.prototype.random) {
+  Object.defineProperty(Array.prototype, 'random', {
+    value: function() {
+      return this[Math.floor(Math.random() * this.length)];
+    },
+    enumerable: false
+  });
+}
+
 // ---------- New generateHeightmap function ----------
 /**
  * Spread height values in “blobs” using a BFS queue.
@@ -38,14 +48,14 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
 
   // 4. BFS to compute distance from border for each cell
   const dist = Array(polygons.length).fill(Infinity);
-  const q = [];
-  border.forEach(i => { dist[i] = 0; q.push(i); });
-  while (q.length) {
-    const i = q.shift();
+  const queue = [];
+  border.forEach(i => { dist[i] = 0; queue.push(i); });
+  while (queue.length) {
+    const i = queue.shift();
     polygons[i].neighbors.forEach(n => {
       if (dist[n] > dist[i] + 1) {
         dist[n] = dist[i] + 1;
-        q.push(n);
+        queue.push(n);
       }
     });
   }
@@ -59,16 +69,12 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
   let lastSeeds = [];
   for (let b = 0; b < blobCount; b++) {
     let startIndex;
-    if (b === 0 || !lastSeeds.length) {
-      // first blob: anywhere in safeSeeds
-      startIndex = safeSeeds[Math.floor(Math.random() * safeSeeds.length)];
+    if (b === 0) {
+      startIndex = safeSeeds.random();
     } else {
-      // cluster along last seed’s neighbors (fallback to safeSeeds)
-      const parent = lastSeeds[Math.floor(Math.random() * lastSeeds.length)];
-      const neighbors = polygons[parent].neighbors.filter(n => safeSeeds.includes(n));
-      startIndex = neighbors.length
-        ? neighbors[Math.floor(Math.random() * neighbors.length)]
-        : safeSeeds[Math.floor(Math.random() * safeSeeds.length)];
+      const parent = lastSeeds.random();
+      const nbrs = polygons[parent].neighbors.filter(n => safeSeeds.includes(n));
+      startIndex = nbrs.length ? nbrs.random() : safeSeeds.random();
     }
     lastSeeds.push(startIndex);
 
@@ -106,7 +112,7 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
       });
     }
 
-    // 7. Reset flags for next blob
+    // Reset flags for next blob
     polygons.forEach(p => { p._used = false; });
   }
 }
@@ -119,11 +125,11 @@ const WorldGenerator = () => {
     maxHeight: 0.9,
     blobRadius: 0.9,
     blobSharpness: 0.2,
+    blobCount: 3,
     seaLevel: 0.2,
     blur: 0,
     showGrid: false,
-    drawSeaPolygons: false,
-    blobCount: 3 // NEW: default blob count
+    drawSeaPolygons: false
   });
 
   // Poisson-disc sampling algorithm
