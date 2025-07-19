@@ -13,6 +13,7 @@ A React-based procedural fantasy world generation tool that creates height maps 
 - **Customizable Parameters**: Adjust various generation settings in real-time
 - **Responsive SVG Canvas**: The map automatically scales to fit your screen or container
 - **Robust Error Handling**: The app warns you if your settings are too restrictive for map generation
+- **World Type Templates**: Instantly generate High Island, Low Island, Continental, Archipelago, or Atoll maps with one click
 
 ## Technologies Used
 
@@ -88,6 +89,19 @@ npm install
 - **Height Accumulation**: Multiple overlapping blobs add their heights together
 - **Sharpness Factor**: Randomness multiplier (0 = deterministic, higher = more variation)
 
+### Template System
+
+Use the Template dropdown in the settings panel to quickly generate different world types:
+
+- **High Island**: Large central mountain, many hills, some troughs
+- **Low Island**: Like High Island but scaled down
+- **Continental**: One mountain, several troughs (big rugged island or small archipelago)
+- **Archipelago**: Cluster of small islands
+- **Atoll**: Big mountain with a lagoon trick (future)
+- **Custom**: Use your own freeform settings
+
+When a template is selected, the generator runs a sequence of blob specs to create varied, realistic terrain for that world type.
+
 ## Algorithm Details
 
 ### Poisson-Disc Sampling
@@ -122,6 +136,10 @@ Uses a **BFS-based blob algorithm** that efficiently generates organic terrain:
 4. **Cleanup**: Clear temporary flags for next generation
 
 This approach generates more natural-looking terrain with better performance than the previous ad-hoc method.
+
+#### Templates and Algorithm
+
+Templates are composed of multiple blob specs (mainPeak, radius, count, etc.), allowing for complex, natural terrain generation in a single step.
 
 ### Feature Detection
 Automatically identifies:
@@ -194,7 +212,7 @@ This project has been actively developed with several major improvements:
 - **📚 Better Documentation**: Comprehensive algorithm documentation and usage guides
 - **🖱️ Improved UX**: New Map always plants blobs; Blob Count is user-adjustable with a slider; no more blank ocean on new maps
 - **🌊 Guaranteed Water Border & Mountain Clustering**: Blobs are seeded to ensure a water border, and secondary blobs cluster for natural mountain ranges
-- **🖼️ Responsive SVG & Larger Map**: The map canvas is now 960×540 logical units and scales fluidly to any screen size
+- **🗺️ World Type Templates**: Instantly generate High Island, Low Island, Continental, Archipelago, or Atoll maps with one click
 
 ### Key Algorithm Improvements:
 - **Efficient BFS Queue**: Proper height propagation with breadth-first search

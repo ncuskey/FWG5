@@ -12,6 +12,9 @@
 - Implemented BFS-based blob algorithm for organic terrain.
 - Parameterized main peak, radius, sharpness, and blob count.
 - Added robust feature detection (oceans, islands, lakes).
+- Added world type templates (High Island, Low Island, Continental, Archipelago, Atoll) for instant varied terrain generation.
+- UI dropdown for template selection; generator runs a sequence of blob specs for each template.
+- Lays groundwork for future coastline extension and lagoon tricks.
 
 ### 2. Coastline & Feature Rendering
 - Automatic coastline detection and SVG path generation.
