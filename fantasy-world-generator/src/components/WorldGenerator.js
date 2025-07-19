@@ -278,9 +278,14 @@ const WorldGenerator = () => {
     // Create SVG groups
     const defs = svg.append("defs");
     const viewbox = svg.append("g").attr("class", "viewbox");
+    // 1) draw ocean background first
+    const oceanLayer = viewbox.append("g").attr("class", "oceanLayer");
+    oceanLayer.append("rect")
+      .attr("x", 0).attr("y", 0)
+      .attr("width", mapWidth).attr("height", mapHeight);
+    // 2) now draw land and outlines
     const islandBack = viewbox.append("g").attr("class", "islandBack");
     const mapCells = viewbox.append("g").attr("class", "mapCells");
-    const oceanLayer = viewbox.append("g").attr("class", "oceanLayer");
     const coastline = viewbox.append("g").attr("class", "coastline");
     const shallow = viewbox.append("g").attr("class", "shallow");
     const lakecoast = viewbox.append("g").attr("class", "lakecoast");
@@ -368,13 +373,6 @@ const WorldGenerator = () => {
     drawCoastline(polygons, diagram, mapWidth, mapHeight, coastline, lakecoast, shallow, islandBack);
     
 
-    
-    // Add ocean background (should be behind everything)
-    oceanLayer.append("rect")
-      .attr("x", 0)
-      .attr("y", 0)
-      .attr("width", mapWidth)
-      .attr("height", mapHeight);
     
     // Add cursor for mouse tracking
     const cursor = svg.append("g").append("circle")
