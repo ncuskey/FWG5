@@ -12,6 +12,7 @@ A React-based procedural fantasy world generation tool that creates height maps 
 - **Zoom and Pan**: Interactive navigation with D3.js zoom functionality
 - **Customizable Parameters**: Adjust various generation settings in real-time
 - **Responsive SVG Canvas**: The map automatically scales to fit your screen or container
+- **Robust Error Handling**: The app warns you if your settings are too restrictive for map generation
 
 ## Technologies Used
 
@@ -212,3 +213,16 @@ This project has been actively developed with several major improvements:
 - Original algorithm inspiration from JSFiddle by byzeyLaa
 - D3.js community for excellent documentation and examples
 - React team for the amazing framework
+
+## Troubleshooting
+
+### "Could not find a valid sample after 1000 attempts" warning
+
+If you see this warning, it means your current settings (blob count, max height, points radius, or sea level) are too restrictive for the map size. The app cannot find a valid location for a blob center within the allowed margin.
+
+**How to fix:**
+- Lower the blob count, max height, or points radius
+- Lower the sea level
+- Increase the map size (mapWidth/mapHeight)
+
+Try starting with conservative settings (e.g., blob count 3, max height 0.5, points radius 4) and increase gradually. The app will show a user-facing warning if this situation occurs.
