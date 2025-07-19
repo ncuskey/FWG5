@@ -101,6 +101,7 @@ const WorldGenerator = () => {
   // Map size constants
   const mapWidth = 960;
   const mapHeight = 540;
+  const [sampleWarning, setSampleWarning] = useState("");
 
   // Poisson-disc sampling algorithm
   const poissonDiscSampler = (width, height, radius) => {
@@ -173,7 +174,9 @@ const WorldGenerator = () => {
   // Bounded Poisson-disc sampler
   function boundedSampler(w, h, r, margin) {
     if (margin * 2 >= w || margin * 2 >= h) {
-      console.warn('Margin too large for map size/settings: no valid area for blob centers.');
+      const msg = 'Margin too large for map size/settings: no valid area for blob centers.';
+      console.warn(msg);
+      setSampleWarning(msg);
       return () => null;
     }
     const sampler = poissonDiscSampler(w, h, r);
@@ -185,7 +188,9 @@ const WorldGenerator = () => {
         p = sampler();
         attempts++;
         if (attempts > maxAttempts) {
-          console.warn('Could not find a valid sample after', maxAttempts, 'attempts.');
+          const msg = `Could not find a valid sample after ${maxAttempts} attempts. Try lowering blob count, max height, or points radius.`;
+          console.warn(msg);
+          setSampleWarning(msg);
           return null;
         }
       } while (
@@ -335,6 +340,7 @@ const WorldGenerator = () => {
 
   // Generate the world
   const generateWorld = (count = 0) => {
+    setSampleWarning(""); // clear warning on new map
     const svg = d3.select(svgRef.current);
     
     // Clear previous content
@@ -821,8 +827,14 @@ const WorldGenerator = () => {
         ref={svgRef}
         viewBox={`0 0 ${mapWidth} ${mapHeight}`}
         width="100%"
-        height="auto"
+        height="100%"
+        style={{ display: "block" }}
       />
+      {sampleWarning && (
+        <div style={{ color: 'red', fontWeight: 'bold', margin: '1em 0' }}>
+          {sampleWarning}
+        </div>
+      )}
       <div className="instructions">
         <p>Click on the map to add land masses. First click creates an island, subsequent clicks add hills.</p>
       </div>
