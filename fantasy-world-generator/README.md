@@ -73,6 +73,7 @@ npm install
 - **Blob Radius**: How quickly height spreads and decays (0.5-0.999)
 - **Blob Sharpness**: Controls terrain randomness (0 = smooth, higher = jagged)
 - **Blob Count**: Number of blobs/islands to generate (1-20, adjustable slider)
+- **Sea Level**: Minimum water height; guarantees a water border around all land (default 0.2)
 
 #### Visual Parameters:
 - **Blur**: Adds a blurred outline effect to land masses (0-2px)
@@ -98,10 +99,12 @@ Uses a **BFS-based blob algorithm** that efficiently generates organic terrain:
 
 #### Algorithm Features:
 - **Breadth-First Search**: Ensures proper height propagation from center points
-- **Configurable Parameters**: Main peak, radius, sharpness, and blob count
+- **Configurable Parameters**: Main peak, radius, sharpness, blob count, and sea level
 - **Height Accumulation**: Multiple blobs can overlap and accumulate height
 - **Natural Decay**: Subsequent blobs decay by radius^b for realistic progression
 - **Randomness Control**: Sharpness parameter controls terrain variation
+- **Guaranteed Water Border**: Blobs are seeded far enough from the edge to ensure land always falls below sea level before reaching the map border
+- **Mountain-Range Clustering**: Secondary blobs cluster along existing ridges for natural mountain chains
 
 #### Algorithm Process:
 1. **Reset**: Clear all heights and temporary flags
@@ -111,6 +114,8 @@ Uses a **BFS-based blob algorithm** that efficiently generates organic terrain:
    - Initialize BFS queue with starting point
    - Spread height to neighbors with radius and sharpness factors
    - Continue until height drops below threshold
+   - Blobs are seeded at least clearanceDistance from the edge (guaranteed water border)
+   - Secondary blobs cluster along existing ridges for mountain-range shapes
 3. **Height Capping**: Ensure heights don't exceed 1.0 maximum
 4. **Cleanup**: Clear temporary flags for next generation
 
@@ -185,6 +190,7 @@ This project has been actively developed with several major improvements:
 - **🧹 Code Cleanup**: Removed legacy circle markers and unused features
 - **📚 Better Documentation**: Comprehensive algorithm documentation and usage guides
 - **🖱️ Improved UX**: New Map always plants blobs; Blob Count is user-adjustable with a slider; no more blank ocean on new maps
+- **🌊 Guaranteed Water Border & Mountain Clustering**: Blobs are seeded to ensure a water border, and secondary blobs cluster for natural mountain ranges
 
 ### Key Algorithm Improvements:
 - **Efficient BFS Queue**: Proper height propagation with breadth-first search
