@@ -64,13 +64,22 @@ npm start
 
 ### Generation Parameters
 
+#### Core Parameters:
 - **Points Radius**: Controls the density of the Voronoi cells (1-10)
-- **Max Height**: Maximum elevation for new land masses (0.1-1.0)
-- **Blob Radius**: How far height spreads from the center (0.5-0.999)
-- **Blob Sharpness**: Controls the randomness of height distribution (0-0.5)
+- **Max Height**: Maximum elevation for the primary land mass (0.1-1.0)
+- **Blob Radius**: How quickly height spreads and decays (0.5-0.999)
+- **Blob Sharpness**: Controls terrain randomness (0 = smooth, higher = jagged)
+
+#### Visual Parameters:
 - **Blur**: Adds a blurred outline effect to land masses (0-2px)
 - **Show Grid**: Toggles the display of cell boundaries
 - **Draw Sea Polygons**: Shows all polygons including ocean areas
+
+#### Algorithm Behavior:
+- **Main Peak**: First blob uses full max height value
+- **Radius Decay**: Subsequent blobs decay by radius^b for natural progression
+- **Height Accumulation**: Multiple overlapping blobs add their heights together
+- **Sharpness Factor**: Randomness multiplier (0 = deterministic, higher = more variation)
 
 ## Algorithm Details
 
@@ -81,7 +90,27 @@ Creates a uniform distribution of points across the map area, ensuring no two po
 Divides the map into cells based on the sampled points, where each cell contains all points closest to one of the sample points. This creates the basic terrain structure.
 
 ### Height Map Generation
-Uses a "blob" algorithm that spreads height values from selected points to neighboring cells, creating realistic elevation gradients.
+Uses a **BFS-based blob algorithm** that efficiently generates organic terrain:
+
+#### Algorithm Features:
+- **Breadth-First Search**: Ensures proper height propagation from center points
+- **Configurable Parameters**: Main peak, radius, sharpness, and blob count
+- **Height Accumulation**: Multiple blobs can overlap and accumulate height
+- **Natural Decay**: Subsequent blobs decay by radius^b for realistic progression
+- **Randomness Control**: Sharpness parameter controls terrain variation
+
+#### Algorithm Process:
+1. **Reset**: Clear all heights and temporary flags
+2. **Blob Generation**: For each blob:
+   - Select random starting point
+   - Calculate initial height (main peak for first blob, decayed for others)
+   - Initialize BFS queue with starting point
+   - Spread height to neighbors with radius and sharpness factors
+   - Continue until height drops below threshold
+3. **Height Capping**: Ensure heights don't exceed 1.0 maximum
+4. **Cleanup**: Clear temporary flags for next generation
+
+This approach generates more natural-looking terrain with better performance than the previous ad-hoc method.
 
 ### Feature Detection
 Automatically identifies:
@@ -140,6 +169,29 @@ The application is optimized for:
 ## License
 
 This project is open source and available under the MIT License.
+
+## Recent Updates
+
+This project has been actively developed with several major improvements:
+
+### Latest Version (v2.0) - BFS Blob Algorithm
+- **🚀 BFS-Based Blob Algorithm**: Replaced ad-hoc height generation with efficient BFS approach
+- **⚙️ Parameterized Generation**: Clean, configurable height map generation with main peak, radius, sharpness controls
+- **⚡ Performance Optimization**: Improved memory usage and rendering speed
+- **🧹 Code Cleanup**: Removed legacy circle markers and unused features
+- **📚 Better Documentation**: Comprehensive algorithm documentation and usage guides
+
+### Key Algorithm Improvements:
+- **Efficient BFS Queue**: Proper height propagation with breadth-first search
+- **Height Accumulation**: Multiple blobs can overlap and combine naturally
+- **Natural Decay**: Subsequent blobs decay by radius^b for realistic progression
+- **Configurable Randomness**: Sharpness parameter controls terrain variation
+- **Memory Optimization**: Temporary flags for efficient neighbor tracking
+
+### Previous Versions
+- **v1.0**: Initial implementation with basic blob algorithm
+- **v1.1**: Added coastline detection and feature identification
+- **v1.2**: Implemented interactive controls and real-time updates
 
 ## Acknowledgments
 
