@@ -84,6 +84,34 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
   }
 }
 
+// Templates for world types
+const templates = {
+  highIsland: [
+    { count: 1, mainPeak: 1.0, radius: 0.9 },
+    { count: 15, mainPeak: 0.3, radius: 0.9 },
+    { count: 3, mainPeak: 0.2, radius: 0.95 }
+  ],
+  lowIsland: [
+    { count: 1, mainPeak: 0.3, radius: 0.9 },
+    { count: 15, mainPeak: 0.1, radius: 0.9 },
+    { count: 3, mainPeak: 0.06, radius: 0.95 }
+  ],
+  continental: [
+    { count: 1, mainPeak: 1.0, radius: 0.9 },
+    { count: 5, mainPeak: 0.2, radius: 0.95 }
+  ],
+  archipelago: [
+    { count: 1, mainPeak: 1.0, radius: 0.9 },
+    { count: 15, mainPeak: 0.3, radius: 0.9 },
+    { count: 2, mainPeak: 0.2, radius: 0.95 },
+    { count: 8, mainPeak: 0.1, radius: 0.98 }
+  ],
+  atoll: [
+    { count: 1, mainPeak: 1.0, radius: 0.9 },
+    { count: 1, mainPeak: 0.2, radius: 0.99 } // Lagoon trick: boost coast, then force inner land < seaLevel (future)
+  ]
+};
+
 const WorldGenerator = () => {
   const svgRef = useRef();
   const [debugInfo, setDebugInfo] = useState({ cell: 0, height: 0, feature: 'no' });
@@ -96,7 +124,8 @@ const WorldGenerator = () => {
     seaLevel: 0.2,
     blur: 0,
     showGrid: false,
-    drawSeaPolygons: false
+    drawSeaPolygons: false,
+    selectedTemplate: 'custom'
   });
   // Map size constants
   const mapWidth = 960;
@@ -338,6 +367,19 @@ const WorldGenerator = () => {
     return adjectives[Math.floor(Math.random() * adjectives.length)];
   };
 
+  // Template application logic
+  function applyTemplate(polygons, diagram, templateName) {
+    templates[templateName].forEach(spec => {
+      generateHeightmap(polygons, diagram, {
+        mainPeak: spec.mainPeak * settings.maxHeight,
+        radius: spec.radius * settings.blobRadius,
+        sharpness: settings.blobSharpness,
+        blobCount: spec.count,
+        seaLevel: settings.seaLevel
+      });
+    });
+  }
+
   // Generate the world
   const generateWorld = (count = 0) => {
     setSampleWarning(""); // clear warning on new map
@@ -420,26 +462,27 @@ const WorldGenerator = () => {
     // Detect neighbors
     detectNeighbors(polygons, diagram);
     
-    // Add some initial height for visualization
-    if (count === 0) {
-      generateHeightmap(polygons, diagram, {
-        mainPeak: 0.5,
-        radius: 0.9,
-        sharpness: 0.2,
-        blobCount: 5,
-        seaLevel: settings.seaLevel
-      });
-    }
-    
-    // Generate random map if count is provided
-    if (count > 0) {
-      generateHeightmap(polygons, diagram, {
-        mainPeak: settings.maxHeight,
-        radius: settings.blobRadius,
-        sharpness: settings.blobSharpness,
-        blobCount: count,
-        seaLevel: settings.seaLevel
-      });
+    if (settings.selectedTemplate && settings.selectedTemplate !== 'custom') {
+      applyTemplate(polygons, diagram, settings.selectedTemplate);
+    } else {
+      if (count === 0) {
+        generateHeightmap(polygons, diagram, {
+          mainPeak: 0.5,
+          radius: 0.9,
+          sharpness: 0.2,
+          blobCount: 5,
+          seaLevel: settings.seaLevel
+        });
+      }
+      if (count > 0) {
+        generateHeightmap(polygons, diagram, {
+          mainPeak: settings.maxHeight,
+          radius: settings.blobRadius,
+          sharpness: settings.blobSharpness,
+          blobCount: count,
+          seaLevel: settings.seaLevel
+        });
+      }
     }
     
     // Mark features and draw
@@ -791,6 +834,20 @@ const WorldGenerator = () => {
               onChange={(e) => handleSettingChange('blobCount', parseInt(e.target.value))}
             />
             {settings.blobCount}
+          </label>
+          <label>
+            Template:
+            <select
+              value={settings.selectedTemplate}
+              onChange={e => handleSettingChange('selectedTemplate', e.target.value)}
+            >
+              <option value="custom">Custom</option>
+              <option value="highIsland">High Island</option>
+              <option value="lowIsland">Low Island</option>
+              <option value="continental">Continental</option>
+              <option value="archipelago">Archipelago</option>
+              <option value="atoll">Atoll</option>
+            </select>
           </label>
           <label>
             <input
