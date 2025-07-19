@@ -131,6 +131,9 @@ const WorldGenerator = () => {
     showGrid: false,
     drawSeaPolygons: false
   });
+  // Map size constants
+  const mapWidth = 960;
+  const mapHeight = 540;
 
   // Poisson-disc sampling algorithm
   const poissonDiscSampler = (width, height, radius) => {
@@ -340,8 +343,6 @@ const WorldGenerator = () => {
   // Generate the world
   const generateWorld = (count = 0) => {
     const svg = d3.select(svgRef.current);
-    const mapWidth = 640;
-    const mapHeight = 360;
     
     // Clear previous content
     svg.selectAll("*").remove();
@@ -816,7 +817,12 @@ const WorldGenerator = () => {
             </label>
           </div>
         </div>
-      <svg ref={svgRef} width="640" height="360" />
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${mapWidth} ${mapHeight}`}
+        width="100%"
+        height="auto"
+      />
       <div className="instructions">
         <p>Click on the map to add land masses. First click creates an island, subsequent clicks add hills.</p>
       </div>
