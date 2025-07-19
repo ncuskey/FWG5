@@ -11,6 +11,7 @@ A React-based procedural fantasy world generation tool that creates height maps 
 - **Geographic Features**: Identifies and names oceans, lakes, and islands
 - **Zoom and Pan**: Interactive navigation with D3.js zoom functionality
 - **Customizable Parameters**: Adjust various generation settings in real-time
+- **Responsive SVG Canvas**: The map automatically scales to fit your screen or container
 
 ## Technologies Used
 
@@ -149,6 +150,7 @@ The application is highly customizable through the settings panel. You can:
 - Adjust terrain generation parameters
 - Modify visual appearance
 - Change the map size (in the code)
+- For a larger or smaller map, edit the `mapWidth` and `mapHeight` constants at the top of `WorldGenerator.js`. The SVG will remain fully responsive.
 - Add new feature types
 - Implement additional algorithms
 
@@ -191,6 +193,7 @@ This project has been actively developed with several major improvements:
 - **📚 Better Documentation**: Comprehensive algorithm documentation and usage guides
 - **🖱️ Improved UX**: New Map always plants blobs; Blob Count is user-adjustable with a slider; no more blank ocean on new maps
 - **🌊 Guaranteed Water Border & Mountain Clustering**: Blobs are seeded to ensure a water border, and secondary blobs cluster for natural mountain ranges
+- **🖼️ Responsive SVG & Larger Map**: The map canvas is now 960×540 logical units and scales fluidly to any screen size
 
 ### Key Algorithm Improvements:
 - **Efficient BFS Queue**: Proper height propagation with breadth-first search
