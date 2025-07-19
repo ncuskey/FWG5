@@ -32,49 +32,16 @@ export function generateHeightmap(polygons, diagram, { mainPeak, radius, sharpne
     p._used = false;
   });
 
-  // 2. Compute clearanceDistance so height at the edge < seaLevel
-  const clearanceDistance = Math.ceil(
-    Math.log(seaLevel / mainPeak) / Math.log(radius)
-  );
-
-  // 3. Identify border cells (edges with no left/right neighbor)
-  const border = new Set();
-  diagram.edges.forEach(e => {
-    if (!e.left || !e.right) {
-      if (e.left ) border.add(e.left.index);
-      if (e.right) border.add(e.right.index);
-    }
-  });
-
-  // 4. BFS to compute distance from border for each cell
-  const dist = Array(polygons.length).fill(Infinity);
-  const queue = [];
-  border.forEach(i => { dist[i] = 0; queue.push(i); });
-  while (queue.length) {
-    const i = queue.shift();
-    polygons[i].neighbors.forEach(n => {
-      if (dist[n] > dist[i] + 1) {
-        dist[n] = dist[i] + 1;
-        queue.push(n);
-      }
-    });
-  }
-
-  // 5. Only cells > clearanceDistance are safe seeds
-  const safeSeeds = dist
-    .map((d,i) => d > clearanceDistance ? i : null)
-    .filter(i => i !== null);
-
-  // 6. Cluster blob seeds and pick from safeSeeds
+  // 2. Blob seeding: just pick random indices (all are now safe due to margin)
   let lastSeeds = [];
   for (let b = 0; b < blobCount; b++) {
     let startIndex;
     if (b === 0) {
-      startIndex = safeSeeds.random();
+      startIndex = Math.floor(Math.random() * polygons.length);
     } else {
       const parent = lastSeeds.random();
-      const nbrs = polygons[parent].neighbors.filter(n => safeSeeds.includes(n));
-      startIndex = nbrs.length ? nbrs.random() : safeSeeds.random();
+      const nbrs = polygons[parent].neighbors;
+      startIndex = nbrs.length ? nbrs.random() : Math.floor(Math.random() * polygons.length);
     }
     lastSeeds.push(startIndex);
 
@@ -203,6 +170,21 @@ const WorldGenerator = () => {
     }
   };
 
+  // Bounded Poisson-disc sampler
+  function boundedSampler(w, h, r, margin) {
+    const sampler = poissonDiscSampler(w, h, r);
+    return () => {
+      let p;
+      do {
+        p = sampler();
+      } while (
+        !p ||
+        p[0] < margin || p[0] > w - margin ||
+        p[1] < margin || p[1] > h - margin
+      );
+      return p;
+    };
+  }
 
 
   // Detect neighbors for each polygon
@@ -397,8 +379,15 @@ const WorldGenerator = () => {
       .style("stroke-width", "0.5")
       .style("fill", "black");
     
+    // Compute rings and margin for safe blob seeding
+    const mainPeak = count > 0 ? settings.maxHeight : 0.5;
+    const radius = count > 0 ? settings.blobRadius : 0.9;
+    const seaLevel = settings.seaLevel;
+    const rings = Math.ceil(Math.log(seaLevel / mainPeak) / Math.log(radius));
+    const margin = rings * settings.pointsRadius;
+    
     // Poisson-disc sampling
-    const sampler = poissonDiscSampler(mapWidth, mapHeight, settings.pointsRadius);
+    const sampler = boundedSampler(mapWidth, mapHeight, settings.pointsRadius, margin);
     const samples = [];
     let sample;
     while (sample = sampler()) samples.push(sample);
