@@ -57,7 +57,8 @@ const WorldGenerator = () => {
     blobSharpness: 0.2,
     blur: 0,
     showGrid: false,
-    drawSeaPolygons: false
+    drawSeaPolygons: false,
+    blobCount: 3 // NEW: default blob count
   });
 
   // Poisson-disc sampling algorithm
@@ -619,11 +620,11 @@ const WorldGenerator = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNewMap = () => {
-    generateWorld();
+    generateWorld(settings.blobCount); // Use blobCount from settings
   };
 
   const handleRandomMap = () => {
-    generateWorld(11);
+    generateWorld(11); // Use a higher blob count for random map
   };
 
   const handleResetZoom = () => {
@@ -700,6 +701,17 @@ const WorldGenerator = () => {
               onChange={(e) => handleSettingChange('blobSharpness', parseFloat(e.target.value))}
             />
             {settings.blobSharpness}
+          </label>
+          <label>
+            Blob Count:
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={settings.blobCount}
+              onChange={(e) => handleSettingChange('blobCount', parseInt(e.target.value))}
+            />
+            {settings.blobCount}
           </label>
           <label>
             <input
