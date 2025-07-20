@@ -7,7 +7,7 @@ console.timeEnd('generate');
 function generate(count) {
   // Add general elements
   var svg = d3.select("svg")
-    .on("touchmove mousemove", moved),
+    .on("touchmove mousemove", moved, { passive: true }),
     mapWidth = +svg.attr("width"),
     mapHeight = +svg.attr("height"),
     defs = svg.select("defs"),
