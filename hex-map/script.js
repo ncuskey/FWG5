@@ -389,6 +389,7 @@ function generate(count) {
       .attr("cy", point[1])
       .attr("fill", color(1 - heightInput.valueAsNumber))
       .attr("class", "circle");
+    
     // Use vanilla JavaScript instead of jQuery
     var circles = document.querySelectorAll('.circle');
     if (circles.length == 1) {
@@ -405,13 +406,16 @@ function generate(count) {
       heightInput.value = height;
       heightOutput.value = height;
     }
-    // process with calculations		
-    // Use vanilla JavaScript instead of jQuery
-    var paths = document.querySelectorAll("path");
-    paths.forEach(p => p.remove());
-		drawPolygons();
-		markFeatures();
-		drawCoastline();
+    
+    // Defer heavy rendering work to next frame for better responsiveness
+    requestAnimationFrame(function() {
+      // process with calculations		
+      // Use more efficient path removal
+      d3.selectAll("path").remove();
+      drawPolygons();
+      markFeatures();
+      drawCoastline();
+    });
   });
 
   function moved(event) {
