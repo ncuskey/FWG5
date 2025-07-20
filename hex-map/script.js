@@ -1,6 +1,6 @@
 // script.js
 console.time('generate');
-generate();
+generate(11);    // seed 11 blobs right away
 console.timeEnd('generate');
 
 // genaral function; run onload of to start from scratch
