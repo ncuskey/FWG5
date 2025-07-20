@@ -13,9 +13,9 @@ function generate(count) {
     mapHeight = +svg.attr("height"),
     defs = svg.select("defs"),
     viewbox = svg.append("g").attr("class", "viewbox"),
+    oceanLayer = viewbox.append("g").attr("class", "oceanLayer").attr("mask", "url(#shape)"),
     islandBack = viewbox.append("g").attr("class", "islandBack"),
     mapCells = viewbox.append("g").attr("class", "mapCells"),
-    oceanLayer = viewbox.append("g").attr("class", "oceanLayer"),
     circles = viewbox.append("g").attr("class", "circles"),
     coastline = viewbox.append("g").attr("class", "coastline"),
 		shallow = viewbox.append("g").attr("class", "shallow"),
@@ -92,7 +92,6 @@ function generate(count) {
       queue = [], // polygons to check
       used = new Set(); // use Set for O(1) lookups
     polygons[start].height += height;
-    console.log("seeded at", start, "new height:", polygons[start].height, "type:", type);
     polygons[start].featureType = undefined;
     queue.push(start);
     used.add(start);
@@ -240,9 +239,11 @@ function generate(count) {
     d3.selectAll(".coastlines").remove();
     // Clear existing ocean layer and add it first (at the back)
     oceanLayer.selectAll("*").remove();
+    // Draw ocean as background rectangle (no mask needed)
     oceanLayer.append("rect")
       .attr("x", 0).attr("y", 0)
-      .attr("width", mapWidth).attr("height", mapHeight);
+      .attr("width", mapWidth).attr("height", mapHeight)
+      .attr("fill", "#5E4FA2");
     
     var line = []; // array to store coasline edges
     for (var i = 0; i < polygons.length; i++) {
@@ -522,11 +523,7 @@ function generate(count) {
     heightInput.value = Math.random() * 0.4 + 0.1;
     heightOutput.value = heightInput.valueAsNumber;
     
-    // Debug: Log height statistics
-    var maxHeight = Math.max(...polygons.map(p => p.height));
-    var avgHeight = polygons.reduce((sum, p) => sum + p.height, 0) / polygons.length;
-    var aboveThreshold = polygons.filter(p => p.height >= 0.05).length;
-    console.log("Height stats - Max:", maxHeight.toFixed(3), "Avg:", avgHeight.toFixed(3), "Above 0.05:", aboveThreshold);
+
     
     // process the calculations
     markFeatures();

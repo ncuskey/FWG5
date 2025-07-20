@@ -54,7 +54,6 @@ svg {
 
 .oceanLayer {
   fill: #5E4FA2;
-  mask: url(#shape);
 }
 
 .shallow {
