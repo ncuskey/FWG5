@@ -91,32 +91,31 @@ function generate(count) {
       radius = radiusInput.valueAsNumber,
       sharpness = sharpnessInput.valueAsNumber,
       queue = [], // polygons to check
-      used = []; // used polygons
+      used = new Set(); // use Set for O(1) lookups
     polygons[start].height += height;
     polygons[start].featureType = undefined;
     queue.push(start);
-    used.push(start);
+    used.add(start);
     for (i = 0; i < queue.length && height > 0.01; i++) {
       if (type == "island") {
         height = polygons[queue[i]].height * radius;
       } else {
         height = height * radius;
       }
-      polygons[queue[i]].neighbors.forEach(function(e) {
-        if (used.indexOf(e) < 0) {
-          var mod = Math.random() * sharpness + 1.1 - sharpness;
-          if (sharpness == 0) {
-            mod = 1;
-          }
+      var neighbors = polygons[queue[i]].neighbors;
+      for (var j = 0; j < neighbors.length; j++) {
+        var e = neighbors[j];
+        if (!used.has(e)) {
+          var mod = sharpness === 0 ? 1 : Math.random() * sharpness + 1.1 - sharpness;
           polygons[e].height += height * mod;
           if (polygons[e].height > 1) {
             polygons[e].height = 1;
           }
           polygons[e].featureType = undefined;
           queue.push(e);
-          used.push(e);
+          used.add(e);
         }
-      });
+      }
     }
   }
 
@@ -212,19 +211,21 @@ function generate(count) {
       polygons[start].featureName = name;
       polygons[start].featureNumber = number;
       queue.push(start);
-      used.push(start);
+      used = new Set([start]); // use Set for O(1) lookups
       while (queue.length > 0) {
         var i = queue[0];
         queue.shift();
-        polygons[i].neighbors.forEach(function(e) {
-          if (used.indexOf(e) < 0 && polygons[e].height >= greater && polygons[e].height < less) {
+        var neighbors = polygons[i].neighbors;
+        for (var k = 0; k < neighbors.length; k++) {
+          var e = neighbors[k];
+          if (!used.has(e) && polygons[e].height >= greater && polygons[e].height < less) {
             polygons[e].featureType = type;
             polygons[e].featureName = name;
             polygons[e].featureNumber = number;
             queue.push(e);
-            used.push(e);
+            used.add(e);
           }
-        });
+        }
       }
       unmarked = polygons.filter(function(e) {
         return (!e.featureType);
@@ -409,7 +410,6 @@ function generate(count) {
     
     // Defer heavy rendering work to next frame for better responsiveness
     requestAnimationFrame(function() {
-      // process with calculations		
       // Use more efficient path removal
       d3.selectAll("path").remove();
       drawPolygons();
