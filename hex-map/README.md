@@ -6,7 +6,7 @@ A procedural fantasy world generator that creates beautiful hex-grid maps using 
 
 ### Core Functionality
 - **Procedural Terrain Generation**: Creates realistic terrain using blob-based height maps
-- **Voronoi Diagram Cells**: Generates organic-looking hex-like cells using D3.js
+- **Voronoi Diagram Cells**: Generates organic-looking hex-like cells using D3.js v7
 - **Poisson-Disc Sampling**: Ensures even distribution of terrain points
 - **Interactive Terrain Building**: Click to add islands and hills
 - **Random Map Generation**: Generate complete maps with one click
@@ -86,8 +86,7 @@ Click the **"Options"** button to access:
 ### Key Components
 
 #### Dependencies
-- **D3.js v7**: Data visualization and SVG manipulation
-- **D3-Voronoi**: Voronoi diagram generation
+- **D3.js v7**: Data visualization and SVG manipulation (includes Delaunay/Voronoi)
 - **Vanilla JavaScript**: No jQuery dependency
 
 #### Core Functions
@@ -105,7 +104,7 @@ Click the **"Options"** button to access:
 Based on Jason Davies' implementation, ensures minimum distance between points while maintaining natural distribution.
 
 #### Voronoi Diagram Generation
-Uses D3's Delaunay triangulation to create Voronoi cells from sampled points.
+Uses D3 v7's Delaunay triangulation to create Voronoi cells from sampled points.
 
 #### Terrain Generation
 1. **Blob Seeding**: User clicks or random placement
@@ -143,7 +142,7 @@ Adjust in `script.js`:
 - Check that D3.js is properly loaded
 
 **"d3.voronoi is not a function"**
-- Verify D3.js v7 and D3-Voronoi are loaded
+- Verify D3.js v7 is loaded (includes Delaunay/Voronoi)
 - Check script loading order
 
 **Purple screen only**
@@ -170,7 +169,9 @@ hex-map/
 ├── index.html      # Main HTML file
 ├── style.css       # Styling and visual effects
 ├── script.js       # Core application logic
-└── README.md       # This documentation
+├── README.md       # This documentation
+├── DEVLOG.md       # Development history
+└── TESTING.md      # Testing guide
 ```
 
 ### Key Functions to Modify
@@ -184,6 +185,10 @@ hex-map/
 2. **Different color schemes**: Change `color` scale in `generate()`
 3. **Additional effects**: Add new SVG filters in `index.html`
 4. **Export functionality**: Add canvas/svg export functions
+
+## 🧪 Testing
+
+See `TESTING.md` for comprehensive testing procedures and verification steps.
 
 ## 📄 License
 
