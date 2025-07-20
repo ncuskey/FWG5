@@ -92,6 +92,7 @@ function generate(count) {
       queue = [], // polygons to check
       used = new Set(); // use Set for O(1) lookups
     polygons[start].height += height;
+    console.log("seeded at", start, "new height:", polygons[start].height, "type:", type);
     polygons[start].featureType = undefined;
     queue.push(start);
     used.add(start);
@@ -129,10 +130,7 @@ function generate(count) {
     svg.selectAll(".mapCell").remove();
     // redraw the polygons based on new heights
     var grads = [],
-      limit = 0.2;
-    if (seaInput.checked == true) {
-      limit = 0;
-    }
+      limit = seaInput.checked ? 0 : 0.05; // Lowered from 0.2 to 0.05 for debugging
     for (var i = 0; i < polygons.length; i++) {
       var polygon = polygons[i];
       if (polygon.height >= limit) {
@@ -178,7 +176,7 @@ function generate(count) {
       var i = queue[0];
       queue.shift();
       polygons[i].neighbors.forEach(function(e) {
-        if (used.indexOf(e) < 0 && polygons[e].height < 0.2) {
+        if (used.indexOf(e) < 0 && polygons[e].height < 0.05) { // Lowered from 0.2 to 0.05
           polygons[e].featureType = type;
           polygons[e].featureName = name;
           queue.push(e);
@@ -197,18 +195,18 @@ function generate(count) {
       return (!e.featureType);
     });
     while (unmarked.length > 0) {
-      if (unmarked[0].height >= 0.2) {
+      if (unmarked[0].height >= 0.05) { // Lowered from 0.2 to 0.05
         type = "Island";
         number = island;
         island += 1;
-        greater = 0.2;
+        greater = 0.05; // Lowered from 0.2 to 0.05
         less = 100; // just to omit exclusion
       } else {
         type = "Lake";
         number = lake;
         lake += 1;
         greater = -100; // just to omit exclusion
-        less = 0.2;
+        less = 0.05; // Lowered from 0.2 to 0.05
       }
       name = adjectives[Math.floor(Math.random() * adjectives.length)];
       start = unmarked[0].index;
@@ -248,14 +246,14 @@ function generate(count) {
     
     var line = []; // array to store coasline edges
     for (var i = 0; i < polygons.length; i++) {
-      if (polygons[i].height >= 0.2) {
+      if (polygons[i].height >= 0.05) { // Lowered from 0.2 to 0.05
         // Get cell edges using D3 v7 API
         var cell = diagram.cellPolygon(i);
         if (cell) {
           var delaunay = diagram.delaunay;
           var neighbors = delaunay.neighbors(i);
           neighbors.forEach(function(ea) {
-            if (ea !== -1 && polygons[ea] && polygons[ea].height < 0.2) {
+            if (ea !== -1 && polygons[ea] && polygons[ea].height < 0.05) { // Lowered from 0.2 to 0.05
               // Get edge points between cells i and ea
               var p1 = samples[i];
               var p2 = samples[ea];
@@ -453,6 +451,13 @@ function generate(count) {
       var x = Math.random() * mapWidth / 4 + mapWidth / 2;
       var y = Math.random() * mapHeight / 4 + mapHeight / 2;
       var rnd = diagram.delaunay.find(x, y);
+      
+      // Set better parameters for main island
+      heightInput.value = 1.0; // Higher initial height
+      radiusInput.value = 0.8; // Slower falloff
+      heightOutput.value = 1.0;
+      radiusOutput.value = 0.8;
+      
       circles.append("circle")
         .attr("r", 4)
         .attr("cx", x)
@@ -460,8 +465,6 @@ function generate(count) {
         .attr("fill", color(1 - heightInput.valueAsNumber))
         .attr("class", "circle");
       add(rnd, "island");
-      radiusInput.value = 0.99;
-      radiusOutput.value = 0.99;
     }
     
     // Phase 2: Add complexity with smaller blobs (Azgaar's approach)
@@ -478,7 +481,7 @@ function generate(count) {
                limit < 100);
       
       // Vary blob sizes for more natural terrain
-      var blobSize = Math.random() * 0.3 + 0.1; // 0.1 to 0.4
+      var blobSize = Math.random() * 0.4 + 0.3; // 0.3 to 0.7 (higher range)
       heightInput.value = blobSize;
       
       circles.append("circle")
@@ -504,7 +507,7 @@ function generate(count) {
                 samples[rnd][1] < mapHeight * 0.2 || samples[rnd][1] > mapHeight * 0.8) &&
                limit < 50);
       
-      var detailSize = Math.random() * 0.15 + 0.05; // 0.05 to 0.2
+      var detailSize = Math.random() * 0.25 + 0.15; // 0.15 to 0.4 (higher range)
       heightInput.value = detailSize;
       
       circles.append("circle")
@@ -518,6 +521,13 @@ function generate(count) {
     
     heightInput.value = Math.random() * 0.4 + 0.1;
     heightOutput.value = heightInput.valueAsNumber;
+    
+    // Debug: Log height statistics
+    var maxHeight = Math.max(...polygons.map(p => p.height));
+    var avgHeight = polygons.reduce((sum, p) => sum + p.height, 0) / polygons.length;
+    var aboveThreshold = polygons.filter(p => p.height >= 0.05).length;
+    console.log("Height stats - Max:", maxHeight.toFixed(3), "Avg:", avgHeight.toFixed(3), "Above 0.05:", aboveThreshold);
+    
     // process the calculations
     markFeatures();
     drawCoastline();
@@ -543,10 +553,7 @@ function generate(count) {
   function toggleBlur() {
     d3.selectAll(".blur").remove();
     if (blurInput.valueAsNumber > 0) {
-      var limit = 0.2;
-      if (seaInput.checked == true) {
-        limit = 0;
-      }
+      var limit = seaInput.checked ? 0 : 0.05; // Lowered from 0.2 to 0.05
       for (var i = 0; i < polygons.length; i++) {
         var polygon = polygons[i];
         if (polygon.height >= limit) {
@@ -571,10 +578,7 @@ function generate(count) {
   // in case of low width svg background will be shined through 
   function toggleStrokes() {
     if (strokesInput.checked == true) {
-      var limit = 0.2;
-      if (seaInput.checked == true) {
-        limit = 0;
-      }
+      var limit = seaInput.checked ? 0 : 0.05; // Lowered from 0.2 to 0.05
       for (var i = 0; i < polygons.length; i++) {
         var polygon = polygons[i];
         if (polygon.height >= limit) {
