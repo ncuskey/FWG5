@@ -40,9 +40,7 @@ function generate(count) {
     }
   }
     // Colors D3 interpolation
-    color = d3.scaleSequential(d3.interpolateSpectral),
-    // Queue array  
-    queue = [];
+    const color = d3.scaleSequential(d3.interpolateSpectral);
 
   var cursor = svg.append("g").append("circle")
     .attr("r", 1)
@@ -121,7 +119,7 @@ function generate(count) {
 
   function drawPolygons() {
     // delete all polygons
-    svg.select(".mapCell").remove();
+    svg.selectAll(".mapCell").remove();
     // redraw the polygons based on new heights
     var grads = [],
       limit = 0.2;
