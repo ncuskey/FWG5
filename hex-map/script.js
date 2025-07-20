@@ -1,9 +1,10 @@
 // script.js
 console.time('generate');
-generate(11);    // seed 11 blobs right away
+generate(11);    // seed 11 blobs with enhanced Azgaar-inspired terrain
 console.timeEnd('generate');
 
-// genaral function; run onload of to start from scratch
+// General function; run onload to start from scratch
+// Enhanced with Azgaar-inspired terrain generation techniques
 function generate(count) {
   // Add general elements
   var svg = d3.select("svg")
@@ -95,8 +96,10 @@ function generate(count) {
     queue.push(start);
     used.add(start);
     for (i = 0; i < queue.length && height > 0.01; i++) {
+      // Use parent polygon's height for more natural terrain spreading (Azgaar's approach)
+      var currentHeight = polygons[queue[i]].height;
       if (type == "island") {
-        height = polygons[queue[i]].height * radius;
+        height = currentHeight * radius;
       } else {
         height = height * radius;
       }
@@ -104,7 +107,11 @@ function generate(count) {
       for (var j = 0; j < neighbors.length; j++) {
         var e = neighbors[j];
         if (!used.has(e)) {
-          var mod = sharpness === 0 ? 1 : Math.random() * sharpness + 1.1 - sharpness;
+          // Enhanced sharpness calculation inspired by Azgaar
+          var mod = 1;
+          if (sharpness > 0) {
+            mod = Math.random() * sharpness + 1.1 - sharpness;
+          }
           polygons[e].height += height * mod;
           if (polygons[e].height > 1) {
             polygons[e].height = 1;
@@ -439,40 +446,76 @@ function generate(count) {
     randomMap(count);
   }
 
-  // Create randon map
+  // Create random map with enhanced multi-blob strategy (inspired by Azgaar)
   function randomMap(count) {
-    for (c = 0; c < count; c++) {
-      // Big blob first
-      if (c == 0) {
-        var x = Math.random() * mapWidth / 4 + mapWidth / 2;
-        var y = Math.random() * mapHeight / 4 + mapHeight / 2;
-        var rnd = diagram.delaunay.find(x, y);
-        circles.append("circle")
-          .attr("r", 3)
-          .attr("cx", x)
-          .attr("cy", y)
-          .attr("fill", color(1 - heightInput.valueAsNumber))
-          .attr("class", "circle");
-        add(rnd, "island");
-        radiusInput.value = 0.99;
-        radiusOutput.value = 0.99;
-      } else { // Then small blobs
-        var limit = 0; // limit while iterations
-        do {
-          rnd = Math.floor(Math.random() * polygons.length);
-          limit++;
-        } while ((polygons[rnd].height > 0.25 || samples[rnd][0] < mapWidth * 0.25 || samples[rnd][0] > mapWidth * 0.75 || samples[rnd][1] < mapHeight * 0.2 || samples[rnd][1] > mapHeight * 0.75) &&
-          limit < 50)
-        heightInput.value = Math.random() * 0.4 + 0.1;
-        circles.append("circle")
-          .attr("r", 3)
-          .attr("cx", samples[rnd][0])
-          .attr("cy", samples[rnd][1])
-          .attr("fill", color(1 - heightInput.valueAsNumber))
-          .attr("class", "circle");
-        add(rnd, "hill");
-      }
+    // Phase 1: Create main island/continent (large blob)
+    if (count > 0) {
+      var x = Math.random() * mapWidth / 4 + mapWidth / 2;
+      var y = Math.random() * mapHeight / 4 + mapHeight / 2;
+      var rnd = diagram.delaunay.find(x, y);
+      circles.append("circle")
+        .attr("r", 4)
+        .attr("cx", x)
+        .attr("cy", y)
+        .attr("fill", color(1 - heightInput.valueAsNumber))
+        .attr("class", "circle");
+      add(rnd, "island");
+      radiusInput.value = 0.99;
+      radiusOutput.value = 0.99;
     }
+    
+    // Phase 2: Add complexity with smaller blobs (Azgaar's approach)
+    for (c = 1; c < count; c++) {
+      var limit = 0;
+      var rnd;
+      do {
+        rnd = Math.floor(Math.random() * polygons.length);
+        limit++;
+        // Prefer areas with some existing height but not too high (creates peninsulas and inlets)
+      } while ((polygons[rnd].height > 0.4 || polygons[rnd].height < 0.05 || 
+                samples[rnd][0] < mapWidth * 0.1 || samples[rnd][0] > mapWidth * 0.9 || 
+                samples[rnd][1] < mapHeight * 0.1 || samples[rnd][1] > mapHeight * 0.9) &&
+               limit < 100);
+      
+      // Vary blob sizes for more natural terrain
+      var blobSize = Math.random() * 0.3 + 0.1; // 0.1 to 0.4
+      heightInput.value = blobSize;
+      
+      circles.append("circle")
+        .attr("r", 2)
+        .attr("cx", samples[rnd][0])
+        .attr("cy", samples[rnd][1])
+        .attr("fill", color(1 - blobSize))
+        .attr("class", "circle");
+      add(rnd, "hill");
+    }
+    
+    // Phase 3: Add some very small detail blobs for coastline complexity
+    var detailBlobs = Math.min(count, 3); // Add 1-3 detail blobs
+    for (c = 0; c < detailBlobs; c++) {
+      var limit = 0;
+      var rnd;
+      do {
+        rnd = Math.floor(Math.random() * polygons.length);
+        limit++;
+        // Look for edge areas to create small islands or peninsulas
+      } while ((polygons[rnd].height > 0.3 || polygons[rnd].height < 0.1 || 
+                samples[rnd][0] < mapWidth * 0.2 || samples[rnd][0] > mapWidth * 0.8 || 
+                samples[rnd][1] < mapHeight * 0.2 || samples[rnd][1] > mapHeight * 0.8) &&
+               limit < 50);
+      
+      var detailSize = Math.random() * 0.15 + 0.05; // 0.05 to 0.2
+      heightInput.value = detailSize;
+      
+      circles.append("circle")
+        .attr("r", 1)
+        .attr("cx", samples[rnd][0])
+        .attr("cy", samples[rnd][1])
+        .attr("fill", color(1 - detailSize))
+        .attr("class", "circle");
+      add(rnd, "hill");
+    }
+    
     heightInput.value = Math.random() * 0.4 + 0.1;
     heightOutput.value = heightInput.valueAsNumber;
     // process the calculations
@@ -544,6 +587,47 @@ function generate(count) {
       }
     } else {
       d3.selectAll(".mapStroke").remove();
+    }
+  }
+
+  // Enhanced terrain generation inspired by Azgaar's heightmap approach
+  function createComplexTerrain(baseCount) {
+    // Create a more complex terrain pattern with multiple phases
+    var totalBlobs = baseCount + Math.floor(Math.random() * 3); // Add some randomness
+    
+    // Phase 1: Main continent/island
+    if (totalBlobs > 0) {
+      var x = Math.random() * mapWidth / 3 + mapWidth / 3;
+      var y = Math.random() * mapHeight / 3 + mapHeight / 3;
+      var rnd = diagram.delaunay.find(x, y);
+      add(rnd, "island");
+    }
+    
+    // Phase 2: Secondary landmasses
+    var secondaryCount = Math.floor(totalBlobs * 0.6);
+    for (var i = 0; i < secondaryCount; i++) {
+      var x = Math.random() * mapWidth;
+      var y = Math.random() * mapHeight;
+      var rnd = diagram.delaunay.find(x, y);
+      if (polygons[rnd].height < 0.3) { // Only add if not too high
+        add(rnd, "hill");
+      }
+    }
+    
+    // Phase 3: Detail blobs for coastline complexity
+    var detailCount = Math.floor(totalBlobs * 0.4);
+    for (var i = 0; i < detailCount; i++) {
+      // Look for edge areas
+      var attempts = 0;
+      var rnd;
+      do {
+        rnd = Math.floor(Math.random() * polygons.length);
+        attempts++;
+      } while (polygons[rnd].height > 0.2 && attempts < 20);
+      
+      if (attempts < 20) {
+        add(rnd, "hill");
+      }
     }
   }
 
